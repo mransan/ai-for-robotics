@@ -15,34 +15,59 @@ type dim = int * int
 
 type t = {
   dim: dim; 
-  state_f: Lacaml.D.mat; 
-  measurement_f: Lacaml.D.mat; 
-  measurement_uncertainty: Lacaml.D.mat; 
+  x_f: Lacaml.D.mat; 
+  z_f: Lacaml.D.mat; 
+  z_cov: Lacaml.D.mat; 
 }
 
-let create ~dim ~state_f ~measurement_f ~measurement_uncertainty  = 
+let create ~dim ~x_f ~z_f ~z_cov= 
 
-  let (state_dim, measurement_dim) = dim in 
+  let (x_d, z_d) = dim in 
 
   begin 
-    if not @@ Util.is_square_of_size state_f state_dim 
-    then failwith "Invalid state_f dimension"
+    if not @@ Util.is_square_of_size x_f x_d 
+    then failwith "Invalid x_f dimension"
   end; 
   
   begin 
-    if Mat.dim1 measurement_f <> measurement_dim || 
-       Mat.dim2 measurement_f <> state_dim
-    then failwith "Invalid measurement_f dimension"
+    if Mat.dim1 z_f <> z_d || 
+       Mat.dim2 z_f <> x_d
+    then failwith "Invalid z_f dimension"
   end; 
   
   begin 
-    if not @@ Util.is_square_of_size measurement_uncertainty measurement_dim
-    then failwith "Invalid measurement_dim dimension"
+    if not @@ Util.is_square_of_size z_cov z_d
+    then failwith "Invalid z_d dimension"
   end; 
-  { dim; state_f; measurement_f; measurement_uncertainty } 
+  { dim; x_f; z_f; z_cov } 
 
 
-let predict ?u {state_f; dim = (state_d, measurement_d); _ } ~x ~p = 
+let update ?x_f ?z_f ?z_cov ({dim = (x_d, z_d); _ } as kf) =
+  let kf = match x_f with 
+    | Some x_f -> 
+      if not @@ Util.is_square_of_size x_f x_d
+      then failwith "Invalid x_f size"
+      else {kf with x_f}
+    | None -> kf in 
+  
+  let kf = match z_f with 
+    | Some z_f -> 
+      if Mat.dim1 z_f <> z_d || 
+         Mat.dim2 z_f <> x_d
+      then failwith "Invalid z_f dimension"
+      else {kf with z_f}
+    | None -> kf in 
+  
+  let kf = match z_cov with 
+    | Some z_cov -> 
+      if not @@ Util.is_square_of_size z_cov z_d 
+      then failwith "Invalid z_cov dimension"
+      else {kf with z_cov}
+    | None -> kf in 
+  kf 
+
+let predict {x_f; dim = (state_d, measurement_d); _ } ~x ~x_cov = 
+  (*
   begin 
     if not @@ Util.is_square_of_size p state_d
     then failwith "Invalid state uncertainty matrix"
@@ -52,20 +77,22 @@ let predict ?u {state_f; dim = (state_d, measurement_d); _ } ~x ~p =
     | Some u -> L.lacpy u 
     (* TODO check size *)
   in   
-  let x' = L.gemm ~beta:1. ~c state_f x  in
-  let p' = L.gemm (L.gemm state_f p) (Mat.transpose @@ L.lacpy state_f ) in
-  (x', p') 
+  *)
+  let c  = Mat.make0 state_d 1 in 
+  let x' = L.gemm ~beta:1. ~c x_f x  in
+  let x_cov' = L.gemm (L.gemm x_f x_cov) (Mat.transpose @@ L.lacpy x_f ) in
+  (x', x_cov') 
 
-let add_measurement {dim = (state_d, measurement_d); measurement_f; measurement_uncertainty; _ } ~z ~x ~p = 
+let add_measurement {dim = (state_d, measurement_d); z_f; z_cov; _ } ~z ~x ~x_cov = 
   begin 
     if Mat.dim1 z <> measurement_d || 
        Mat.dim2 z <> 1 
     then failwith "Invalid measurement matrix" 
   end; 
-  let y = L.gemm ~beta:(1.0) ~c:(L.lacpy z) ~alpha:(-. 1.) measurement_f x in 
-  let s = L.gemm (L.gemm measurement_f p) (Mat.transpose measurement_f) ~beta:1.0 ~c:(L.lacpy measurement_uncertainty) in 
+  let y = L.gemm ~beta:(1.0) ~c:(L.lacpy z) ~alpha:(-. 1.) z_f x in 
+  let s = L.gemm (L.gemm z_f x_cov) (Mat.transpose z_f) ~beta:1.0 ~c:(L.lacpy z_cov) in 
   L.getri s; 
-  let k = L.gemm (L.gemm p (Mat.transpose measurement_f)) s in 
+  let k = L.gemm (L.gemm x_cov (Mat.transpose z_f)) s in 
   let x'= Util.add_matrix x (L.gemm k y) in 
-  let p'= L.gemm (L.gemm ~beta:1. ~c:(Mat.identity state_d) ~alpha:(-. 1.) k measurement_f) p in 
-  (x', p')  
+  let x_cov'= L.gemm (L.gemm ~beta:1. ~c:(Mat.identity state_d) ~alpha:(-. 1.) k z_f) x_cov in 
+  (x', x_cov')  

@@ -15,5 +15,6 @@ clean:
 native: 
 			$(OCB) src/lesson01.native
 			$(OCB) src/lesson02.native
+			$(OCB) src/lesson03.native
 
 .PHONY: 	all clean byte native 

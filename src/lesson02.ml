@@ -45,20 +45,6 @@ let add_matrix x y =
   L.gemm ~beta:1. ~c:(L.lacpy y) (Mat.identity (Mat.dim1 x)) x   
   (* very ineficient *)
 
-let prediction ~f ~x ~u ~p = 
-  let x' = (L.gemm ~beta:1. ~c:(L.lacpy u) f x)  in
-  let p' = L.gemm (L.gemm f p) (Mat.transpose @@ L.lacpy f ) in
-  (x', p') 
-
-let measurement ~z ~h ~x ~p ~r ~i = 
-  let y = L.gemm ~alpha:(-. 1.) h x ~beta:(1.0) ~c:(L.lacpy z) in 
-  let s = L.gemm (L.gemm h p) (Mat.transpose h) ~beta:1.0 ~c:(L.lacpy r) in 
-  L.getri s; 
-  let k = L.gemm (L.gemm p (Mat.transpose h)) s in 
-  let x'= add_matrix x (L.gemm k y) in 
-  let p'= L.gemm (L.gemm ~beta:1. ~c:(L.lacpy i) ~alpha:(-. 1.) k h) p in 
-  (x', p')  
-
 let () = 
   let x = Mat.of_array [| 
     [|0.|] ; 
@@ -66,39 +52,39 @@ let () =
   |] in 
   (* Initial state (location, velocity *)
 
-  let p = Mat.of_array [| 
+  let x_cov = Mat.of_array [| 
     [|1000. ; 0.    |]  ; 
     [|0.    ; 1000. |] 
   |] in
   (* Initial uncertainty *)
 
-  let f = Mat.of_array [| 
+  let x_f = Mat.of_array [| 
     [|1. ; 1. |]  ; 
     [|0. ; 1. |] 
   |] in
   (* Next state function *)
 
-  let h = Mat.of_array [| 
+  let z_f = Mat.of_array [| 
     [|1.; 0.|] ; 
   |] in 
   (* Measurement function *)
   
-  let r = Mat.of_array [| 
+  let z_cov = Mat.of_array [| 
     [|1.|] ; 
   |] in 
   (* Measurement uncertainty *)
 
   let module Kf = Kalman_filter in 
 
-  let kf = Kf.create ~dim:(2, 1) ~state_f:f ~measurement_f:h ~measurement_uncertainty:r in  
+  let kf = Kf.create ~dim:(2, 1) ~x_f ~z_f ~z_cov in  
   
-  let _ = List.fold_left (fun (x, p) measurement -> 
+  let _ = List.fold_left (fun (x, x_cov) measurement -> 
     let z    = Mat.of_array [| [| measurement |] |] in 
-    let x, p = Kf.add_measurement kf ~x ~p ~z in 
-    let x, p = Kf.predict kf ~x ~p in 
+    let x, x_cov = Kf.add_measurement kf ~x ~x_cov ~z in 
+    let x, x_cov = Kf.predict kf ~x ~x_cov in 
     Format.printf ">> After filter: \n%!";
     Format.printf "@[<2>X =@\n@\n@[%a@]@]@\n@\n" Lacaml.Io.pp_fmat x; 
-    Format.printf "@[<2>P =@\n@\n@[%a@]@]@\n@\n" Lacaml.Io.pp_fmat p;
-    (x, p) 
-  ) (x, p) [1. ; 2.; 3.; 4. ; 4. ; 4. ;4. ; 4. ; 4. ;4. ; 4. ; 4. ;4. ; 4. ; 4. ;] in 
+    Format.printf "@[<2>X covariance =@\n@\n@[%a@]@]@\n@\n" Lacaml.Io.pp_fmat x_cov;
+    (x, x_cov) 
+  ) (x, x_cov) [1. ; 2.; 3.; 4. ; 4. ; 4. ;4. ; 4. ; 4. ;4. ; 4. ; 4. ;4. ; 4. ; 4. ;] in 
   ()
