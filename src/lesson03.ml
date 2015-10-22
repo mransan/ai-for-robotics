@@ -6,11 +6,15 @@ let normalize x = mod_float (x +. 2. *. pi) (2. *. pi)
 type robot_confguration = {
   length : float; 
   bearing_noise : Gaussian1D.t ; 
+  steering_noise: Gaussian1D.t ; 
+  distance_noise: Gaussian1D.t ; 
 }
 
 let robot_confguration ~length ~bearing_noise = {
   length; 
-  bearing_noise = Gaussian1D.create ~mean:0. ~variance:(bearing_noise**2.)
+  bearing_noise = Gaussian1D.create ~mean:0. ~variance:(bearing_noise**2.);
+  steering_noise = Gaussian1D.create ~mean:0. ~variance:(0.1 ** 2.); 
+  distance_noise = Gaussian1D.create ~mean:0. ~variance:(5. ** 2.); 
 }
 
 type robot_pos = {
@@ -24,10 +28,16 @@ type robot_motion = {
   distance : float; 
 }
 
+let add_noise_to_robot_motion {steering_noise; distance_noise} {steering; distance} =
+  {
+    steering = steering +. Gaussian1D.random steering_noise; 
+    distance = distance +. Gaussian1D.random distance_noise;
+  }
+
 let string_of_robot_pos {r_x;r_y;r_theta; } = 
   Printf.sprintf "x: %10.3f , y: %10.3f, theta: %7.4f" r_x r_y r_theta
 
-let update_pos {length} {r_x;r_y;r_theta} {steering; distance} = 
+let update_pos {length; } {r_x;r_y;r_theta} {steering; distance} = 
   let beta = distance /. length *. tan (steering) in 
   match beta with 
   | beta when beta < 0.001 && beta > (-. 0.001) -> { 
@@ -52,6 +62,9 @@ type landmark = {
 
 type bearing = float 
 
+let add_noise_to_bearing {bearing_noise; _} bearing = 
+  bearing +. Gaussian1D.random bearing_noise
+
 let bearing {r_x;r_y; r_theta} {l_x; l_y} : bearing = 
   atan2 (l_y -. r_y) (l_x -. r_x) -. r_theta
 
@@ -63,7 +76,6 @@ let measurement_probability {bearing_noise; _ } pos measurements =
     error *. Gaussian1D.x bearing_noise error_bearing 
   ) 1. measurements
     
-
 (* resampling unit test *) 
 
 let () = 
@@ -82,7 +94,6 @@ let () =
     )
   in  
   ignore @@ loop p 50
-
 
 
 (* ------------------------------------------------- *)
