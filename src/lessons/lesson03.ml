@@ -3,6 +3,8 @@ let pi = 4. *. atan 1.0
 
 let normalize x = mod_float (x +. 2. *. pi) (2. *. pi)  
 
+let degrees_of_radians x = x *. 180. /. pi
+
 type robot_confguration = {
   length : float; 
   bearing_noise : Gaussian1D.t ; 
@@ -28,16 +30,21 @@ type robot_motion = {
   distance : float; 
 }
 
-let add_noise_to_robot_motion {steering_noise; distance_noise} {steering; distance} =
-  {
+let add_noise_to_robot_motion {steering_noise; distance_noise} {steering; distance} = {
     steering = steering +. Gaussian1D.random steering_noise; 
     distance = distance +. Gaussian1D.random distance_noise;
   }
 
-let string_of_robot_pos {r_x;r_y;r_theta; } = 
-  Printf.sprintf "x: %10.3f , y: %10.3f, theta: %7.4f" r_x r_y r_theta
+let string_of_robot_pos ?excel {r_x;r_y;r_theta; } = 
+  match excel with 
+  | None    -> Printf.sprintf "x: %10.3f , y: %10.3f, theta: %7.4f" r_x r_y r_theta
+  | Some () -> Printf.sprintf "%10.3f, %10.3f, %7.4f" r_x r_y r_theta
 
-let update_pos {length; } {r_x;r_y;r_theta} {steering; distance} = 
+let update_pos ?with_noise ({length; } as config) {r_x;r_y;r_theta} motion = 
+  let {distance; steering} = match with_noise with 
+    |  None    -> motion 
+    |  Some () -> add_noise_to_robot_motion config motion 
+  in 
   let beta = distance /. length *. tan (steering) in 
   match beta with 
   | beta when beta < 0.001 && beta > (-. 0.001) -> { 
@@ -77,25 +84,6 @@ let measurement_probability {bearing_noise; _ } pos measurements =
     (error *. Gaussian1D.x bearing_noise error_bearing, s) 
   ) (1., "") measurements
     
-(* resampling unit test *) 
-
-let () = 
-  Random.self_init (); 
-  let gaussian = Gaussian1D.create ~mean:101.5 ~variance:10. in 
-  let add_weight = List.map (fun x -> 
-    (x, Gaussian1D.x gaussian (float_of_int @@ Char.code x))) 
-  in 
-  let p = ['a'; 'b'; 'c'; 'd'; 'e'; 'f' ; 'g'; 'h'; 'i'; 'j'; 'k'] in 
-  let p = p @ p @ p @ p  in 
-  let rec loop (acc: char list) = function 
-    | 0 -> acc 
-    | n -> (
-      print_endline  @@ String.concat "," (List.map Char.escaped acc); 
-      loop (Particle_filter.sample (add_weight acc)) (n - 1) 
-    )
-  in  
-  ignore @@ loop p 50
-
 
 (* ------------------------------------------------- *)
 

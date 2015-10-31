@@ -1,8 +1,13 @@
 type t 
+
 (** 1 Dimensional Gaussian distribution *)
 
 val create : mean:float -> variance:float -> t 
 (** [create ~mean ~variance ] creates a new gaussian distribution *) 
+
+val from_samples : float list -> t 
+(** [from_samples samples] returns the gaussian distribution of the given sample
+ *) 
 
 val mean : t -> float 
 (** [mean gaussian] returns the mean of the gaussian *)
