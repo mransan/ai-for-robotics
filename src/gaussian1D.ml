@@ -59,3 +59,29 @@ let random ({mean; variance; previous_random} as t) =
     t.previous_random <- Some z1; 
     mean +. z0 *. (sqrt variance)
   )
+
+let histogram_from_samples nb = function
+  | [] -> failwith "Cannot create histogram from samples"
+  | (x::samples) as all_samples -> 
+    let min, max, n = List.fold_left (fun (min_, max_, n) x -> 
+      (min x min_, max x max_, n+1)
+    ) (x, x, 1) samples in 
+    let dx  =  
+      if min = max 
+      then 1. 
+      else (max +. (100. *. epsilon_float) -. min) /. (float_of_int nb) in 
+    let bi  = fun x -> int_of_float @@ (x -. min) /. dx in 
+    let xi  = 1. /. (float_of_int n *. dx) in 
+
+    let h   = Array.make nb 0. in 
+    List.iter (fun x -> 
+      Array.set h (bi x) ((Array.get h (bi x))  +. xi) 
+    ) all_samples; 
+
+    let h = Util.fold_righti (fun i hv l -> 
+      ((min +. (float_of_int i) *. dx  +. (dx /. 2.)), hv)::l 
+    ) h [] in 
+    h
+    
+
+

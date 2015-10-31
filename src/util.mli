@@ -12,3 +12,8 @@ val within : delta:float -> float -> float -> bool
 (** [within ~delta x y] returns true if the absolute difference of [x] and [y]
     is strictly less than [delta]. 
   *)
+
+val fold_righti : (int -> 'b -> 'a -> 'a) -> 'b array -> 'a -> 'a
+(** [Array.fold_righti f a x] computes
+   [f 0 a.(0) (f 1 a.(1) ( ... (f (n-1) a.(n-1) x) ...))],
+   where [n] is the length of the array [a]. *)

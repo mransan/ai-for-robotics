@@ -25,3 +25,5 @@ val predict : t -> t -> t
 (** [add g1 g2] returns the new updated g based on [g1] and [g2] *) 
 
 val random : t -> float 
+
+val histogram_from_samples : int -> float list -> (float * float) list 

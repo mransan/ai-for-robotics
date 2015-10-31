@@ -12,7 +12,7 @@
 
 .theta_line {
   stroke:red; 
-  stroke-width:1;
+  stroke-width:0;
 }
 
 .axis path, .axis line {
@@ -21,30 +21,92 @@
   shape-rendering: crispEdges;
 }
 
-</style> 
+.axis text {
+  font: 8px sans-serif;
+}
 
-<svg class="chart">
-</svg> 
+.title {
+  font: 10px sans-serif;
+}
+
+.bar { 
+  fill: steelblue;
+}
+
+
+</style> 
+<table> <tr>
+  <td>
+  <div style="float:left">
+    <svg class="particles">
+    </svg> 
+  </div>
+  </td>
+  <td>
+  <div style="float:right; top=0;">
+    <svg  class="x_distribution">
+    </svg> 
+    <svg class="y_distribution">
+    </svg> 
+  </div>
+  </td>
+</tr>
+</table>
 
 <script src="d3.min.js" charset="utf-8"></script> 
 <script src="pf2d.js" charset="utf-8"></script> 
+<script src="distribution.js" charset="utf-8"></script> 
 
 <script>
   
-  var svg = d3.select("svg")
+  var svg = d3.select(".particles")
 
   var pf2d = new PF2D({
-    width: 700,
-    height: 700, 
+    width: 600,
+    height: 600, 
     margin: {top:20, right:20, bottom:20, left:20},
-    radius: 7,  
+    radius: 6,  
     d3_svg: svg,
     particle_class: "particle", 
     truth_class: "truth",
     theta_class: "theta_line",
-    time_interval: 100
   }); 
 
-  pf2d.load("pf2d.json", function () {}); 
+  var x_distribution_svg = d3.select(".x_distribution").append("g")
+  
+  var x_distribution = new Distribution({
+    width: 300, 
+    height: 150, 
+    margin: {left : 30, top: 10, bottom: 20, right:10}, 
+    d3_svg: x_distribution_svg,
+    title: "X dist.",
+    title_class: "title",
+  }); 
+  
+  var y_distribution_svg = d3.select(".y_distribution").append("g")
+  
+  var y_distribution = new Distribution({
+    width: 300, 
+    height: 150, 
+    margin: {left : 30, top: 10, bottom: 20, right:10}, 
+    d3_svg: y_distribution_svg,
+    title: "Y dist.",
+    title_class: "title",
+  }); 
 
+  d3.json("pf2d.json", function(error, all_data) {
+    pf2d.setup(all_data, function(d) { return d.particles; });
+    var i = 0; 
+    (function display() {
+      var data = all_data[i];  
+      pf2d.display(data.particles);
+      x_distribution.display(data.x_distribution);
+      y_distribution.display(data.y_distribution);
+      i = i+1; 
+      if(i !== all_data.length) {
+        setTimeout(display,10); 
+      }
+    })(); 
+  });
+  
 </script>

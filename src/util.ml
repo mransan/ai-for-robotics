@@ -10,3 +10,10 @@ let within_n_eps ?n:(n = 2) x y =
 
 let within ~delta x y = 
   abs_float (x -. y) < delta 
+
+let fold_righti f a x =
+  let r = ref x in
+  for i = Array.length a - 1 downto 0 do
+    r := f i (Array.unsafe_get a i) !r
+  done;
+  !r

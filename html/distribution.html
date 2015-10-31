@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<meta charset="utf-8"> 
+<style>
+
+.bar { 
+  fill: steelblue;
+}
+
+.axis text {
+  font: 10px sans-serif;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000; 
+  shape-rendering: crispEdges;
+}
+
+</style> 
+
+<svg class="chart">
+</svg> 
+<script src="d3.min.js" charset="utf-8">
+</script> 
+<script src="distribution.js" charset="utf-8">
+</script> 
+<script>
+
+  var svg = d3.select("svg"); 
+
+  var distribution = new Distribution({
+    width: 200, 
+    height: 100, 
+    margin: {left : 30, top: 10, bottom: 20, right:10}, 
+    d3_svg: svg, 
+
+  }); 
+  var all_data = [
+    [
+      [0.5, 1.],  
+      [1.5, 2.],  
+      [2.5, 3.],  
+      [3.5, 4.],  
+      [4.5, 5.],  
+    ],
+    [
+      [0.5, 1.],  
+      [2.5, 2.],  
+      [4.5, 2.],  
+      [6.5, 4.],  
+      [8.5, 7.],  
+    ]
+  ];
+  
+  var i = 0;
+  (function display() {
+    var data = all_data[i];  
+    distribution.display(data);
+    i = i+1; 
+    if(i !== all_data.length) {
+      setTimeout(display,1000); 
+    }
+  })(); 
+
+</script>
