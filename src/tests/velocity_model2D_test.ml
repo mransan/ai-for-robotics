@@ -117,7 +117,7 @@ let s0 = Mat.of_array [|
 
 let () = 
   let p = Vm.Pos.create () in 
-  let v = Vm.Velocity.create ~v:0.05 ~w:( Angle.pi/. 200.) () in 
+  let v = Vm.Velocity.create ~v:(Angle.pi *. 2.5 /. 200.) ~w:( Angle.pi/. 200.) () in 
   let v_noise = Vm.Velocity.create_noise 0.2 0.2 0.2 0.2 in 
 
   let json, _ , _ = Util.fold_n (fun (json, p, s) -> 
