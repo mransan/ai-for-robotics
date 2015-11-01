@@ -40,7 +40,7 @@
 
   var limit = 12; 
   var x = d3.scale.linear().range([0, width ]).domain([-limit, limit]);
-  var y = d3.scale.linear().range([0, height]).domain([-limit/2, limit]);
+  var y = d3.scale.linear().range([height, 0]).domain([-limit/2, limit]);
 
   var y_axis = d3.svg.axis().scale(y).orient("left");
   svg.append("g")
@@ -51,7 +51,7 @@
   var x_axis   = d3.svg.axis().scale(x).orient("bottom"); 
   svg.append("g")
     .attr("class", "x axis")
-    .attr("transform", "translate(0," + (height - y(0)) + ")")
+    .attr("transform", "translate(0," + y(0) + ")")
     .call(x_axis);
 
   function do_display(data) {
@@ -63,7 +63,7 @@
       var dry      = data[5];
 
       var cx = x(dx); 
-      var cy = height - y(dy);
+      var cy = y(dy);
 
       ell
         .attr("cx", cx)
@@ -73,7 +73,7 @@
         .attr("ry", 20 * dry);
 
       var x2 = x(dx + 1 * Math.cos(dbearing));
-      var y2 = height - y(dy + 1 * Math.sin(dbearing));
+      var y2 = y(dy + 1 * Math.sin(dbearing));
 
       bearing 
         .attr("x1", cx)
