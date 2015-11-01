@@ -19,6 +19,7 @@ native:
 			$(OCB) src/tests/steering_robot_test.native
 			$(OCB) src/tests/particle_filter_test.native
 			$(OCB) src/tests/gaussian1D_test.native
+			$(OCB) src/tests/velocity_model2D_test.native
 			$(OCB) src/apps/pf2d.native
 
 .PHONY: 	all clean byte native 
