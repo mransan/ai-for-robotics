@@ -39,5 +39,10 @@ val eigen_decomposition : ?n:int -> mat -> (Lacaml.D.vec * mat)
     [values] are the eigen values, and [vectors] the eigen vectors. 
  *)
 
+(** {2 Conversion} *)
+
+val to_array : mat -> float array array 
+(** [to_array m] convert [mat] to an array. *)
+
 val print : string -> mat -> unit 
 (** [print name m] prints a debugging statement for [m] *)

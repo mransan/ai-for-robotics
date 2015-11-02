@@ -43,86 +43,30 @@ module Motion = struct
 
 end 
 
-module Landmark = struct 
-
-  type t = {
-    l_x: float; 
-    l_y: float; 
-  }
-
-  let create ~x ~y = {
-    l_x = x; l_y = y; 
-  }
-
-end 
+type landmark = Pos2D.t 
 
 
-module Pos = struct 
-
-  type t = {
-    r_x: float; 
-    r_y: float; 
-    r_theta: float; 
-  }
-  
-  let create ~x ~y ~theta = {
-    r_x = x; r_y = y; r_theta = theta; 
-  }
-
-  let zero = {r_x = 0.; r_y = 0.; r_theta = 0.} 
-
-  let average = function 
-    | [] -> failwith "Empty list of position for average"
-    | ({r_theta = r_theta0 ;_}::_) as l  -> 
-      let n = float_of_int (List.length l) in 
-      let pos = List.fold_left (fun l r -> {
-        r_x = l.r_x +. r.r_x;
-        r_y = l.r_y +. r.r_y;
-        r_theta = l.r_theta +.  
-          (Angle.normalize @@ r.r_theta -. r_theta0 +. Angle.pi) 
-          +. r_theta0 -. Angle.pi
-      }) zero l in 
-      { 
-        r_x = pos.r_x /. n ; 
-        r_y = pos.r_y /. n ; 
-        r_theta = pos.r_theta /. n; 
-      } 
-
-  let x {r_x; _ } = r_x 
-
-  let y {r_y; _ } = r_y 
-
-  let theta {r_theta; _ } = r_theta 
-
-  let abs_distance ?from:(from = zero) pos = 
-    sqrt @@ ((pos.r_x -. from.r_x) ** 2.)  +. ((pos.r_y -. from.r_y) ** 2.)
-  
-  let to_string ?excel {r_x;r_y;r_theta; } = 
-    match excel with 
-    | None    -> Printf.sprintf "x: %10.3f , y: %10.3f, theta: %7.4f" r_x r_y (degrees_of_radians r_theta)
-    | Some () -> Printf.sprintf "%10.3f, %10.3f, %7.4f" r_x r_y r_theta
-end 
-
-let update_pos ?with_noise ({Config.length; } as config) {Pos.r_x;r_y;r_theta} motion = 
+let update_pos ?with_noise ({Config.length; } as config) p motion = 
   let {Motion.distance; steering} = match with_noise with 
     |  None    -> motion 
     |  Some () -> Motion.add_noise_to_robot_motion config motion 
   in 
-  let beta = distance /. length *. tan (steering) in 
+  let beta  = distance /. length *. tan (steering) in 
+  let theta = Pos2D.theta p in  
   match beta with 
-  | beta when beta < 0.001 && beta > (-. 0.001) -> { 
-    Pos.r_x = r_x +. distance *. cos r_theta; 
-    Pos.r_y = r_y +. distance *. sin r_theta; 
-    Pos.r_theta; 
-  }
+  | beta when beta < 0.001 && beta > (-. 0.001) -> 
+    let x = Pos2D.x p  +. distance *. cos theta in 
+    let y = Pos2D.y p  +. distance *. sin theta in 
+    let theta = Pos2D.theta p in 
+    Pos2D.create ~x ~y ~theta 
   | beta -> (
     let r  = distance /. beta in 
-    let cx = r_x -. (sin r_theta *. r) in 
-    let cy = r_y +. (cos r_theta *. r) in {
-      Pos.r_x = cx +. (sin (r_theta +. beta)) *. r ;
-      Pos.r_y = cy -. (cos (r_theta +. beta)) *. r;
-      Pos.r_theta = normalize (r_theta +. beta);
-    } 
+    let cx = Pos2D.x p -. (sin theta *. r) in 
+    let cy = Pos2D.y p +. (cos theta *. r) in 
+    let x = cx +. (sin (theta +. beta)) *. r in
+    let y = cy -. (cos (theta +. beta)) *. r in 
+    let theta = normalize (theta +. beta) in 
+    Pos2D.create ~x ~y ~theta 
   )
 
 type bearing = float 
@@ -130,8 +74,8 @@ type bearing = float
 let add_noise_to_bearing {Config.bearing_noise; _} bearing :float = 
   bearing +. Gaussian1D.random bearing_noise
 
-let bearing ?with_noise {Pos.r_x;r_y; r_theta} {Landmark.l_x; l_y} : bearing = 
-  let calculated = atan2 (l_y -. r_y) (l_x -. r_x) -. r_theta in 
+let bearing ?with_noise p l: bearing = 
+  let calculated = Pos2D.bearing ~from:p l in  
   match with_noise with
   | None   -> normalize @@ calculated 
   | Some config -> normalize @@ add_noise_to_bearing config calculated 

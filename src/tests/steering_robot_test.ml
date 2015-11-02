@@ -13,44 +13,44 @@ let () =
   (** Test the robot motion (ie position update) with no noise *) 
 
   let config = Sr.Config.create ~length:20. () in 
-  let pos   = Sr.Pos.zero in 
-  assert(0. = Sr.Pos.x pos); 
-  assert(0. = Sr.Pos.y pos); 
-  assert(0. = Sr.Pos.theta pos); 
+  let pos   = Pos2D.zero in 
+  assert(0. = Pos2D.x pos); 
+  assert(0. = Pos2D.y pos); 
+  assert(0. = Pos2D.theta pos); 
 
   let pos = Sr.update_pos config pos (Sr.Motion.create ~steering:0.  ~distance:1.) in  
   
-  assert(1. = Sr.Pos.x pos); 
-  assert(0. = Sr.Pos.y pos); 
-  assert(0. = Sr.Pos.theta pos); 
+  assert(1. = Pos2D.x pos); 
+  assert(0. = Pos2D.y pos); 
+  assert(0. = Pos2D.theta pos); 
   
-  let pos    = Sr.Pos.create ~x:0. ~y:0. ~theta:(Angle.pi /. 2.)  in 
+  let pos    = Pos2D.create ~x:0. ~y:0. ~theta:(Angle.pi /. 2.)  in 
   let pos = Sr.update_pos config pos (Sr.Motion.create ~steering:0.  ~distance:1.) in  
   
-  assert(Util.within_n_eps 0. (Sr.Pos.x pos));
-  assert(1. = Sr.Pos.y pos); 
-  assert((Angle.pi /. 2.)  = Sr.Pos.theta pos); 
+  assert(Util.within_n_eps 0. (Pos2D.x pos));
+  assert(1. = Pos2D.y pos); 
+  assert((Angle.pi /. 2.)  = Pos2D.theta pos); 
  
   let motion = Sr.Motion.create ~steering:(Angle.pi /. 4.) ~distance:1. in 
 
   ignore @@ Util.fold_n (fun pos -> 
-    if Sr.Pos.theta pos > Angle.pi 
-    then (assert (Sr.Pos.x pos < 0.); pos) 
+    if Pos2D.theta pos > Angle.pi 
+    then (assert (Pos2D.x pos < 0.); pos) 
     else Sr.update_pos config pos motion
-  ) Sr.Pos.zero 150
+  ) Pos2D.zero 150
 
 let () = 
   (* Test distance *) 
-  let pos = Sr.Pos.create ~x:1. ~y:0. ~theta:0. in 
-  assert(Util.within_n_eps 1. @@ Sr.Pos.abs_distance pos);
-  let pos = Sr.Pos.create ~x:0. ~y:1. ~theta:0. in 
-  assert(Util.within_n_eps 1. @@ Sr.Pos.abs_distance pos);
-  let pos = Sr.Pos.create ~x:1. ~y:1. ~theta:0. in 
-  assert(Util.within_n_eps (sqrt 2.)  @@ Sr.Pos.abs_distance pos);
-  let pos = Sr.Pos.create ~x:2. ~y:1. ~theta:0. in 
-  assert(Util.within_n_eps (sqrt 5.)  @@ Sr.Pos.abs_distance pos);
-  let pos = Sr.Pos.create ~x:2. ~y:2. ~theta:0. in 
-  assert(Util.within_n_eps (sqrt 8.)  @@ Sr.Pos.abs_distance pos);
+  let pos = Pos2D.create ~x:1. ~y:0. ~theta:0. in 
+  assert(Util.within_n_eps 1. @@ Pos2D.distance pos);
+  let pos = Pos2D.create ~x:0. ~y:1. ~theta:0. in 
+  assert(Util.within_n_eps 1. @@ Pos2D.distance pos);
+  let pos = Pos2D.create ~x:1. ~y:1. ~theta:0. in 
+  assert(Util.within_n_eps (sqrt 2.)  @@ Pos2D.distance pos);
+  let pos = Pos2D.create ~x:2. ~y:1. ~theta:0. in 
+  assert(Util.within_n_eps (sqrt 5.)  @@ Pos2D.distance pos);
+  let pos = Pos2D.create ~x:2. ~y:2. ~theta:0. in 
+  assert(Util.within_n_eps (sqrt 8.)  @@ Pos2D.distance pos);
   ()
 
 
@@ -77,16 +77,16 @@ let () =
   let config = Sr.Config.create ~distance_noise:1. ~length:20. ()  in 
   let m      = Sr.Motion.create ~distance  ~steering:0. in 
   let positions = Util.fold_n (fun l -> 
-    (Sr.update_pos ~with_noise:() config Sr.Pos.zero m)::l
+    (Sr.update_pos ~with_noise:() config Pos2D.zero m)::l
   ) [] 10000 in 
 
-  let expected  = Sr.Pos.create ~x:distance ~y:0. ~theta:0. in 
+  let expected  = Pos2D.create ~x:distance ~y:0. ~theta:0. in 
   let distances = List.map (fun pos -> 
-    assert (Util.within_n_eps 0. @@ Sr.Pos.y pos); 
-    assert (Util.within_n_eps 0. @@ Sr.Pos.theta pos); 
+    assert (Util.within_n_eps 0. @@ Pos2D.y pos); 
+    assert (Util.within_n_eps 0. @@ Pos2D.theta pos); 
     
-    let sign = if Sr.Pos.x pos > distance then 1. else -. 1. in 
-    sign *. Sr.Pos.abs_distance ~from:expected pos
+    let sign = if Pos2D.x pos > distance then 1. else -. 1. in 
+    sign *. Pos2D.distance ~from:expected pos
   ) positions in 
 
   let g = Gaussian1D.from_samples distances in 
@@ -97,20 +97,20 @@ let () =
 let () = 
   (* Bearing test *) 
 
-  let landmark = Sr.Landmark.create ~x:1. ~y:1. in 
-  assert(Util.within_n_eps ~n:10 (Angle.pi /. 4.) (Sr.bearing Sr.Pos.zero landmark)); 
+  let landmark = Pos2D.create ~x:1. ~y:1. ~theta:0. in 
+  assert(Util.within_n_eps ~n:10 (Angle.pi /. 4.) (Sr.bearing Pos2D.zero landmark)); 
   
-  let landmark = Sr.Landmark.create ~x:1. ~y:0. in 
-  assert(Util.within_n_eps ~n:10 (0.) (Sr.bearing Sr.Pos.zero landmark)); 
+  let landmark = Pos2D.create ~x:1. ~y:0. ~theta:0. in 
+  assert(Util.within_n_eps ~n:10 (0.) (Sr.bearing Pos2D.zero landmark)); 
   
-  let landmark = Sr.Landmark.create ~x:0. ~y:1. in 
-  assert(Util.within_n_eps ~n:10 (Angle.pi /. 2.) (Sr.bearing Sr.Pos.zero landmark)); 
+  let landmark = Pos2D.create ~x:0. ~y:1. ~theta:0. in 
+  assert(Util.within_n_eps ~n:10 (Angle.pi /. 2.) (Sr.bearing Pos2D.zero landmark)); 
   
-  let landmark = Sr.Landmark.create ~x:(-. 1.)  ~y:0. in 
-  assert(Util.within_n_eps ~n:10 (Angle.pi) (Sr.bearing Sr.Pos.zero landmark)); 
+  let landmark = Pos2D.create ~x:(-. 1.)  ~y:0. ~theta:0. in 
+  assert(Util.within_n_eps ~n:10 (Angle.pi) (Sr.bearing Pos2D.zero landmark)); 
   
-  let landmark = Sr.Landmark.create ~x:0.  ~y:(-. 1.)  in 
-  assert(Util.within_n_eps ~n:10 (1.5 *. Angle.pi) (Sr.bearing Sr.Pos.zero landmark))
+  let landmark = Pos2D.create ~x:0.  ~y:(-. 1.) ~theta:0.  in 
+  assert(Util.within_n_eps ~n:10 (1.5 *. Angle.pi) (Sr.bearing Pos2D.zero landmark))
 
 let () = 
   (** This example move the robot once from the zero position and then measures 
@@ -127,15 +127,15 @@ let () =
     ~bearing_noise:0.1  ~length:20. () in 
 
   Util.fold_n(fun () -> 
-    let l1  = Sr.Landmark.create ~x:1. ~y:1. in 
-    let l2  = Sr.Landmark.create ~x:0. ~y:1. in 
+    let l1  = Pos2D.create ~x:1. ~y:1. ~theta:0. in 
+    let l2  = Pos2D.create ~x:0. ~y:1. ~theta:0. in 
     let m   = Sr.Motion.create ~steering:0. ~distance:1. in 
-    let pos = Sr.update_pos ~with_noise:() config Sr.Pos.zero m in 
+    let pos = Sr.update_pos ~with_noise:() config Pos2D.zero m in 
     let (bearing1, e1, p1) = measurement_probability config pos (l1, (Angle.pi /. 2.)) in 
     let (bearing2, e2, p2) = measurement_probability config pos (l2, (Angle.pi *. 0.75 )) in 
 
     Printf.fprintf out "%s, %f, %f, %f, %f, %f \n" 
-     (Sr.Pos.to_string pos) 
+     (Pos2D.to_string pos) 
      (Angle.degrees_of_radians bearing1) p1  
      (Angle.degrees_of_radians bearing2) p2  
      (p1 *. p2)

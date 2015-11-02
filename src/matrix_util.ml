@@ -13,6 +13,8 @@ let identity = Mat.identity
 
 let of_array = Mat.of_array 
 
+let to_array = Mat.to_array
+
 let sub_matrix ~n ~m a = 
   L.lacpy ~n ~m a
 
