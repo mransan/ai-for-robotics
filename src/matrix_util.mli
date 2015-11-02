@@ -1,4 +1,13 @@
+(** Matrix utilities *)
 
+(** This module provides the basic functionality needed for the 
+    robotic algorithm. It currently is implemented in terms 
+    of the Lacaml library based on Lapack. 
+    
+    This is not guaranteed to be forever the case. This module therefore
+    serves as the abstraction layer between the 2 and represent the minimal
+    feature set required. 
+  *)
 
 (** {2 Types} *) 
 
@@ -34,7 +43,7 @@ val mul : mat -> mat -> mat
 val transpose : mat -> mat 
 (** [transpose m] transposes m *)
 
-val eigen_decomposition : ?n:int -> mat -> (Lacaml.D.vec * mat) 
+val eigen_decomposition : ?n:int -> mat -> (Vector_util.vec * mat) 
 (** [eigen_decomposition m] returns the [(values, vectors]) where 
     [values] are the eigen values, and [vectors] the eigen vectors. 
  *)
