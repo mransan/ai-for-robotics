@@ -34,11 +34,21 @@ val add : mat -> mat -> mat
 (**  [add x y] adds [x] and [y]. @raise Failure if [x] and [y] have different
      sizes *)
 
+val sub : mat -> mat -> mat 
+(**  [sub x y] substracts [x] and [y]. @raise Failure if [x] and [y] have different
+     sizes *)
+
 val mul : mat -> mat -> mat 
 (**  [mul x y] multiplies [x] with [y]. 
      
      @raise Failure if [col x] is different than [row y] 
  *)
+
+module Ops : sig
+  val ( +~ ) : mat -> mat -> mat 
+  val ( -~ ) : mat -> mat -> mat 
+  val ( *~ ) : mat -> mat -> mat 
+end 
 
 val transpose : mat -> mat 
 (** [transpose m] transposes m *)
@@ -46,6 +56,12 @@ val transpose : mat -> mat
 val eigen_decomposition : ?n:int -> mat -> (Vector_util.vec * mat) 
 (** [eigen_decomposition m] returns the [(values, vectors]) where 
     [values] are the eigen values, and [vectors] the eigen vectors. 
+ *)
+
+val square_dim : mat -> int 
+(** [square_dim m] returns the size of the square matrix [m]. 
+    
+    if [m] is not squared then [Failure] is raised.
  *)
 
 (** {2 Conversion} *)

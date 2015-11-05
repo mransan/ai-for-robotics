@@ -37,6 +37,7 @@
   svg.attr("width", width).attr("height", height);
   var ell     = svg.append("ellipse").attr("class", "bar");
   var bearing = svg.append("line").attr("class", "bearing");
+  var actual  = svg.append("circle").attr("class", "actual_pos").attr("r", 5);
 
   var limit = 8; 
   var x = d3.scale.linear().range([0, width ]).domain([-limit*0.75, limit*.75]);
@@ -58,9 +59,9 @@
       var dx       = data[0];
       var dy       = data[1];
       var dbearing = data[2];
-      var dtheta   = data[3];
-      var drx      = data[4];
-      var dry      = data[5];
+      var dtheta   = data[6];
+      var drx      = data[7];
+      var dry      = data[8];
 
       var cx = x(dx); 
       var cy = y(dy);
@@ -69,8 +70,8 @@
         .attr("cx", cx)
         .attr("cy", cy)
         .attr("transform", "rotate(" + (-dtheta) + ", " + cx + "," + cy + ")")
-        .attr("rx", 20 * drx)
-        .attr("ry", 20 * dry);
+        .attr("rx", 200 * drx)
+        .attr("ry", 200 * dry);
 
       var x2 = x(dx + 0.5 * Math.cos(dbearing));
       var y2 = y(dy + 0.5 * Math.sin(dbearing));
@@ -80,6 +81,10 @@
         .attr("y1", cy)
         .attr("x2", x2)
         .attr("y2", y2);
+        
+      actual 
+        .attr("cx", x(data[3]))
+        .attr("cy", y(data[4]))
   }
 
   d3.json("velocity_model_ekf.json", function (error, all_data) {

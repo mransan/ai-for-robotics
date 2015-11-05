@@ -6,6 +6,8 @@ type t = {
   w: float;
 }
 
+let zero = {v = 0.; w = 0. } 
+
 let create ?v:(v = 0.) ?w:(w = 0.) () = 
   {v; w}
 
@@ -74,11 +76,12 @@ let print_mat name a =
     Format.printf "@[<2>%s =@\n@\n@[%a@]@]@\n@\n%!" name Lacaml.Io.pp_fmat a
 
 let kf vel vel_noise dt pos pos_noise = 
+  let open Mat.Ops in 
   let pos' = update_pos vel dt pos in 
   let g    = pos_jacobian vel dt pos in 
   let m    = noise_matrix vel vel_noise in 
   let v    = motion_jacobian vel dt pos in  
 
-  let s1 = Mat.mul (Mat.mul g pos_noise) (Mat.transpose g) in 
-  let s2 = Mat.mul (Mat.mul v m ) (Mat.transpose v) in 
-  pos', Mat.add s1 s2 
+  let s1 = g *~ pos_noise *~ (Mat.transpose g) in 
+  let s2 = v *~ m  *~ (Mat.transpose v) in 
+  pos', s1 +~  s2 

@@ -18,6 +18,9 @@ type dt = float
 
 (** {2 Creation} *) 
 
+val zero : t 
+(** [zero] zero speed *)
+
 val create : ?v:float -> ?w:float -> unit -> t 
 (** [create ~v ~w] creates a new velocity *)
 
