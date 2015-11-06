@@ -39,6 +39,10 @@ module U = struct
      v *~ m *~ (Mat.transpose v) 
      
 end 
+(*
+ 
+
+TODO: complete with new Ekf.
 
 module Ekfp = Ekf.Make_prediction(X)(U) 
 
@@ -64,7 +68,6 @@ let () =
 
 
 
-(*
 let kf_update p s z q = 
   let z  = mat_of_pos z in 
   let zp = mat_of_pos p in 
