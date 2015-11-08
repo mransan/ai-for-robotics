@@ -8,10 +8,17 @@
   stroke-width:1;
 }
 
-.truth_line {
+.bearing_line {
   stroke:red; 
   stroke-width:1;
 }
+
+.actual_pos_line {
+  stroke:green; 
+  stroke-width:3;
+}
+
+
 
 .axis text {
   font: 10px sans-serif;
@@ -62,9 +69,13 @@
 
   var group = svg.append("g");
   var s_ellipse = group.append("ellipse").attr("class", "sigma");
-  var bearing_line = group.append("line").attr("class", "truth_line"); 
-
+  var bearing_line = group.append("line").attr("class", "bearing_line"); 
   var bearing_line_lengh  = 0.3;
+
+  var actual_belief_line1 = group.append("line").attr("class", "actual_pos_line");
+  var actual_belief_line2 = group.append("line").attr("class", "actual_pos_line");
+  var actual_belief_line_length = 0.1;
+  var actual_belief_line_ratio = Math.cos(Math.PI/4);
 
   function do_display(data) {
       var dx     = data[0];
@@ -73,6 +84,9 @@
       var drx    = data[3];
       var dry    = data[4];
       var dorientation = data[5];
+      var ax     = data[6];
+      var ay     = data[7];
+      var atheta = data[8];
 
       bearing_line
         .attr("x1", x(dx))
@@ -87,9 +101,29 @@
         .attr("rx", radius(Math.sqrt(drx)))
         .attr("ry", radius(Math.sqrt(dry)));
 
+      var l1_x1 = ax - actual_belief_line_length * actual_belief_line_ratio; 
+      var l1_y1 = ay + actual_belief_line_length * actual_belief_line_ratio; 
+      var l1_x2 = ax + actual_belief_line_length * actual_belief_line_ratio; 
+      var l1_y2 = ay - actual_belief_line_length * actual_belief_line_ratio; 
+      actual_belief_line1
+        .attr("x1", x(l1_x1))
+        .attr("y1", y(l1_y1))
+        .attr("x2", x(l1_x2))
+        .attr("y2", y(l1_y2));
+      
+      var l2_x1 = ax - actual_belief_line_length * actual_belief_line_ratio; 
+      var l2_y1 = ay - actual_belief_line_length * actual_belief_line_ratio; 
+      var l2_x2 = ax + actual_belief_line_length * actual_belief_line_ratio; 
+      var l2_y2 = ay + actual_belief_line_length * actual_belief_line_ratio; 
+      actual_belief_line2
+        .attr("x1", x(l2_x1))
+        .attr("y1", y(l2_y1))
+        .attr("x2", x(l2_x2))
+        .attr("y2", y(l2_y2));
+
   }
 
-  d3.json("ekf3d_z_only.json", function (error, all_data) {
+  d3.json("ekf3d_01.json", function (error, all_data) {
     var i = 0;
     (function display() {
       var data = all_data[i];  

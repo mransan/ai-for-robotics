@@ -4,10 +4,11 @@ val pi : float
 (** pi constant *)
 
 val normalize : ?type_:[< `Zero_2_pi | `Zero_centered > `Zero_2_pi ] -> float -> float
-(* [normalize angle] normalize [angle] between [0.] and [2 *. pi] value 
-   TODO: add several normalizer method: 
-   a) -pi/pi 
-   b) -pi/pi centered around a different value than 0. 
+(* [normalize ~type_ angle] normalize [angle] using the [type_] range: 
+   {ul
+   {- [Zero_2_pi] : the normalized angle will be between [0.] and [2. *. pi] }
+   {- [Zero_centered] : the normalized angle will be between [-. pi] and [pi] }
+   }
  *)
 
 val degrees_of_radians : float -> float 
