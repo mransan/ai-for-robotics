@@ -268,7 +268,7 @@ let () =
     Pos2D.create ~x:10. ~y:10. ~theta:0.; 
     Pos2D.create ~x:0.  ~y:10. ~theta:0.; 
   ] in
-  let measurement_noise = 10. in 
+  let measurement_noise = 0.01 in
 
   (* First pass simulation using the u_actual and no noise 
      to collect all measurements. 

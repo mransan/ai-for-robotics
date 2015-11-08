@@ -18,8 +18,6 @@
   stroke-width:3;
 }
 
-
-
 .axis text {
   font: 10px sans-serif;
 }
@@ -32,8 +30,34 @@
 
 </style> 
 
-<svg class="chart">
-</svg> 
+<table cellpadding="10">
+  <tr>
+    <td colspan="2">
+      <h3>Extended Kalman Filter for a Planar Robot (x, y, orientation)
+      </h3>
+    </td>
+  </tr>
+  <tr style="margin-bottom:10px" >
+    <td align="left" valign="center" >
+      Select the simulation: 
+    </td>
+    <td align="right" valign="center">
+      <select class="data_selection">
+        <option value="ekf3d_u_only.json">Command Only</option>
+        <option value="ekf3d_z_only.json">Measurement Only</option>
+        <option value="ekf3d_full_simulation_high_measurement_noise.json">Full Simulation (High measurement noise)</option>
+        <option value="ekf3d_full_simulation_medium_measurement_noise.json">Full Simulation (Medium measurement noise)</option>
+        <option value="ekf3d_full_simulation_low_measurement_noise.json">Full Simulation (Low measurement noise)</option>
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <svg class="chart">
+      </svg> 
+    </td>
+  </tr>
+</table>
 <script src="d3.min.js" charset="utf-8">
 </script> 
 <script src="distribution.js" charset="utf-8">
@@ -49,8 +73,8 @@
   var min_y = -0.1; 
   var max_y = 2; 
 
-  var min_v  = -1; 
-  var max_v  = 10; 
+  var min_v  = -1.3; 
+  var max_v  = 10.5; 
   var radius = d3.scale.linear().range([0, width ]).domain([0, max_v - min_v]);
   var x = d3.scale.linear().range([0, width ]).domain([min_v, max_v]);
   var y = d3.scale.linear().range([height, 0]).domain([min_v, max_v]);
@@ -122,17 +146,31 @@
         .attr("y2", y(l2_y2));
 
   }
-
-  d3.json("ekf3d_01.json", function (error, all_data) {
-    var i = 0;
-    (function display() {
-      var data = all_data[i];  
-      do_display(data);
-      i = i+1; 
-      if(i !== all_data.length) {
-        setTimeout(display,100); 
-      }
-    })(); 
+  
+  var menu      = d3.select(".data_selection");
+  var counter   = 0;
+  menu.on("change", function() {
+      counter = counter + 1; 
+      load_data_and_display(); 
   });
+
+  function load_data_and_display() {
+    var file_name = menu.property("value");
+    var local_counter = counter;
+    d3.json(file_name, function (error, all_data) {
+      var i = 0;
+      (function display() {
+        var data = all_data[i];  
+        do_display(data);
+        i = i+1; 
+        if(i !== all_data.length && local_counter === counter) {
+          setTimeout(display,100); 
+        }
+      })(); 
+    });
+  }
+  load_data_and_display();
+
+
 
 </script>
