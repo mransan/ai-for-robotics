@@ -37,7 +37,7 @@ let distance ?from:(from = zero) pos =
   sqrt @@ ((pos.x -. from.x) ** 2.)  +. ((pos.y -. from.y) ** 2.)
 
 let bearing ?from:({x;y;theta} = zero)  {x=x';y=y'; _ } = 
-  Angle.normalize @@ atan2 (y' -. y) (x' -. x) -. theta 
+  Angle.normalize ~type_:`Zero_centered @@ atan2 (y' -. y) (x' -. x) -. theta 
 
 let to_string ?excel {x;y;theta; } = 
   match excel with 

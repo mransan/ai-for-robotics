@@ -17,3 +17,8 @@ let fold_righti f a x =
     r := f i (Array.unsafe_get a i) !r
   done;
   !r
+
+let if_some x f = 
+  match x with 
+  | Some x' -> f x' 
+  | None    -> () 

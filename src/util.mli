@@ -17,3 +17,6 @@ val fold_righti : (int -> 'b -> 'a -> 'a) -> 'b array -> 'a -> 'a
 (** [Array.fold_righti f a x] computes
    [f 0 a.(0) (f 1 a.(1) ( ... (f (n-1) a.(n-1) x) ...))],
    where [n] is the length of the array [a]. *)
+
+val if_some : 'a option -> ('a -> unit) -> unit 
+(** [if_some x f] when [x] is [Some x'] then executes [f x'] otherwise no-op *)

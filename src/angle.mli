@@ -3,7 +3,7 @@
 val pi : float 
 (** pi constant *)
 
-val normalize : float -> float
+val normalize : ?type_:[< `Zero_2_pi | `Zero_centered > `Zero_2_pi ] -> float -> float
 (* [normalize angle] normalize [angle] between [0.] and [2 *. pi] value 
    TODO: add several normalizer method: 
    a) -pi/pi 
