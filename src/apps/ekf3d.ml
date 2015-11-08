@@ -26,14 +26,14 @@ module U = struct
   let g pos (v, dt, n) =
     Velocity2D.update_pos v dt pos 
 
-   let jacobian (v, dt, _) pos = 
-     Velocity2D.pos_jacobian v dt pos 
+  let jacobian (v, dt, _) pos = 
+    Velocity2D.pos_jacobian v dt pos 
 
-   let r (vel, dt, noise) pos = 
-     let open Mat.Ops in 
-     let v = Velocity2D.motion_jacobian vel dt pos in 
-     let m = Velocity2D.noise_matrix vel noise in 
-     v *~ m *~ (Mat.transpose v) 
+  let r (vel, dt, noise) pos = 
+    let open Mat.Ops in 
+    let v = Velocity2D.motion_jacobian vel dt pos in 
+    let m = Velocity2D.noise_matrix vel noise in 
+    v *~ m *~ (Mat.transpose v) 
      
 end 
 
@@ -41,20 +41,20 @@ end
 module Z = struct 
   type x = Pos2D.t 
 
-  type z = (Pos2D.t * Mat.mat) 
-  (** (landmark, measurement *) 
+  type z = (Pos2D.t * Mat.mat * float) 
+  (** (landmark, measurement, noise*) 
   
-  let mat_of_z (_, m) = m 
+  let mat_of_z (_, m, _) = m 
   
-  let h (l, _) x =  
+  let h (l, _, noise) x =  
     let m = Mat.of_array [|
       [| Pos2D.distance ~from:x l |]; 
       [| Pos2D.bearing  ~from:x l |]; 
       [| 1.                       |];
     |] in
-   (l, m) 
+   (l, m, noise) 
 
-  let jacobian ({Pos2D.x = l_x; y = l_y; _}, _) {Pos2D.x ; y; theta} =
+  let jacobian ({Pos2D.x = l_x; y = l_y; _}, _, _ ) {Pos2D.x ; y; theta} =
     let q = (l_x -. x)**2. +. (l_y -. y)**2. in 
     Mat.of_array [|
       [|-. (l_x -. x) /. sqrt q ; -. (l_y -. y)/.sqrt q;  0.  |];
@@ -62,12 +62,11 @@ module Z = struct
       [|        0.              ;         0.           ;  0.  |];
     |] 
 
-  let q _ _ = 
-    let s = 0.5 in 
+  let q (_, _, noise)  _ = 
     Mat.of_array [| 
-      [| s  ; 0.  ; 0. |]; 
-      [| 0. ;  s  ; 0. |]; 
-      [| 0. ; 0.  ; s  |]; 
+      [| noise  ; 0.  ; 0. |]; 
+      [| 0. ;  noise  ; 0. |]; 
+      [| 0. ; 0.  ; noise  |]; 
     |] 
 end 
 
@@ -94,9 +93,10 @@ module Html = struct
   
   (** Function to compute the application data at each time step 
    *)
-  let time_i {Pos2D.x; y; theta} s = 
+  let time_i {Pos2D.x; y; theta} s {Pos2D.x = ax; y = ay; theta = atheta } = 
     let rx, ry, rotation = of_s s in 
-    let data = x::y::theta::rx::ry::rotation::[] in 
+    let data = 
+      x::y::theta::rx::ry::rotation::ax::ay::atheta::[] in 
     `List (List.map (fun x -> `Float x) data)  
 end 
 
@@ -138,8 +138,9 @@ let () =
     Pos2D.create ~x:10. ~y:10.   ~theta:0.; 
     Pos2D.create ~x:0.  ~y:10. ~theta:0.; 
   ] in 
+  let measurement_noise = 0.4 in 
   let zs = List.map (fun l -> 
-    Z.h (l, mat_of_pos x') x'
+    Z.h (l, mat_of_pos x, measurement_noise) x'
     (* When invoking [Z.h] it does not matter what the measurement 
        of [z] is. (ie for [z = (l, m)] [m] is ignored in [Z.h].
      *) 
@@ -151,7 +152,7 @@ let () =
     let x, s = List.fold_left (fun (x, s) z -> 
       Ekf.correct x s z
     ) (x, s) zs in  
-    ((Html.time_i x s)::json_list), x, s
+    ((Html.time_i x s x')::json_list), x, s
   ) ([], x, s) 100 in 
 
   (* Printing to file *)
@@ -160,8 +161,10 @@ let () =
   let out  = open_out "ekf3d_z_only.json" in 
   Yojson.to_channel out json; 
   close_out out; 
+  (*
   Printf.printf "X: %s\n" @@ Pos2D.to_string x; 
   Mat.print "S:" s;
+  *)
   () 
 
 let () = 
@@ -195,11 +198,125 @@ let () =
   
   let json_list, x, s = Util.fold_n (fun (j, x,  s) ->
     let x, s = Ekf.predict x s (v, dt, v_noise) in 
-    ((Html.time_i x s) :: j, x, s)
+    ((Html.time_i x s x) :: j, x, s)
   ) ([], x, s) 100 in 
 
   let json = `List (List.rev json_list) in 
   let out  = open_out "ekf3d_u_only.json" in 
   Yojson.to_channel out json; 
   close_out out; 
+  ()
+
+let () =
+
+  (* Initial state *) 
+
+  let x = Pos2D.zero in 
+  let s = 
+    let sxy    = 0.1  in 
+    let stheta = 0.01 in   
+    Mat.of_array [|
+      [|sxy ; 0.  ; 0.     |];
+      [|0.0 ; sxy ; 0.     |];
+      [|0.0 ; 0.  ; stheta |];
+    |] in  
+    
+
+  (* Simulation configuration *)
+
+  let total_time  = 10. in 
+  let steps       = 100 in 
+  let steps_float = float_of_int steps in 
+
+  (* Command 
+  
+     {ul 
+     {- [u_belief] this is the command the robot believes it is executing, it 
+        includes some noise and will be used for the Ekf simulation.
+     } 
+
+     {- [u_actual] this is the command actually executed (with a constant 
+        translation and rotational error). 
+        
+        In this case the noise will be set to 0. and this command will 
+        be used in the first simulation pass to collect the measurements. 
+     }
+     }
+   *)
+  let dt = total_time /. steps_float in 
+  
+  let u_belief = 
+    let v  = 1. in 
+    let w  = Angle.pi /. (2. *. total_time) in 
+    let v  = Velocity2D.create ~v ~w () in 
+    let v_noise = Velocity2D.create_noise 0.1 0.1 0.01 0.01 in 
+    (v, dt, v_noise) 
+  in  
+  
+  let u_actual = 
+    let v  = 1.2 in 
+    let w  = (Angle.pi *. 0.8) /. (2. *. total_time) in 
+    let v  = Velocity2D.create ~v ~w () in 
+    let v_noise = Velocity2D.create_noise 0. 0. 0. 0. in 
+    (v, dt, v_noise) 
+  in  
+  
+  (* Landmarks *) 
+
+  let landmarks = [
+    Pos2D.create ~x:10. ~y:0.  ~theta:0.; 
+    Pos2D.create ~x:10. ~y:10. ~theta:0.; 
+    Pos2D.create ~x:0.  ~y:10. ~theta:0.; 
+  ] in
+  let measurement_noise = 10. in 
+
+  (* First pass simulation using the u_actual and no noise 
+     to collect all measurements. 
+
+     Note that in this specific case we are not introducing
+     any actual noise in the mesurement (like a small delta on 
+     the bearing or distance). Therefore the measurement
+     are accurate so that we can see how well we the Ekf 
+     can track the actual position with perfect measurements. 
+     However the Ekf algorithm does not assume the measurement 
+     are noise-free since [Z.q] is taken into account into the 
+     [Ekf.correct] step.
+   *)
+
+  let x', s', zs = Util.fold_n (fun (x, s, zs) -> 
+    let x, s = Ekf.predict x s u_actual in 
+    let z    = List.fold_left (fun z l -> 
+      let lz = Z.h (l, mat_of_pos x, measurement_noise) x in 
+      lz::z 
+    ) [] landmarks in 
+    x, s, ((z, x)::zs)  
+    (* Note that we also collect the actual state [x] along with the 
+       measurement [z] so that we can jointly the display the belief [x]
+       along with the actual [x].
+     *)
+  ) (x, s, []) steps in 
+
+  let zs = List.rev zs in 
+
+  (* Real simulation now using the u_belief (which is not accurate) 
+     as well as the measurements to correct the state estimation. 
+   *)
+  
+  let json_list, x, s = List.fold_left (fun (json_list, x, s) (z, x')->
+    let x, s = Ekf.predict x s u_belief in
+    let x, s = List.fold_left (fun (x, s) lz -> 
+      Ekf.correct x s lz
+    ) (x, s) z in 
+    ((Html.time_i x s x')::json_list, x, s)
+  ) ([], x, s) zs in 
+  
+  (* Printing *) 
+  
+  let json = `List (List.rev json_list) in 
+  let out  = open_out "ekf3d_01.json" in 
+  Yojson.to_channel out json; 
+  close_out out; 
+
+  Printf.printf "X: %s \n" @@ Pos2D.to_string x; 
+  Mat.print "S" s;
   ()
