@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<meta charset="utf-8"> 
+<style>
+
+.sigma { 
+  fill: steelblue;
+  stroke:blue; 
+  stroke-width:1;
+}
+
+.truth_line {
+  stroke:red; 
+  stroke-width:1;
+}
+
+.axis text {
+  font: 10px sans-serif;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000; 
+  shape-rendering: crispEdges;
+}
+
+</style> 
+
+<svg class="chart">
+</svg> 
+<script src="d3.min.js" charset="utf-8">
+</script> 
+<script src="distribution.js" charset="utf-8">
+</script> 
+<script>
+
+  var svg = d3.select(".chart"); 
+
+  var width  = 500; 
+  var height = 500; 
+  svg.attr("width", width).attr("height", height);
+
+  var min_y = -0.1; 
+  var max_y = 2; 
+
+  var min_v  = -1; 
+  var max_v  = 10; 
+  var radius = d3.scale.linear().range([0, width ]).domain([0, max_v - min_v]);
+  var x = d3.scale.linear().range([0, width ]).domain([min_v, max_v]);
+  var y = d3.scale.linear().range([height, 0]).domain([min_v, max_v]);
+
+  var y_axis = d3.svg.axis().scale(y).orient("left");
+  svg.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(" + x(0) + ", 0)")
+      .call(y_axis);
+
+  var x_axis   = d3.svg.axis().scale(x).orient("bottom"); 
+  svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0, " + y(0) + ")")
+    .call(x_axis);
+
+  var group = svg.append("g");
+  var s_ellipse = group.append("ellipse").attr("class", "sigma");
+  var bearing_line = group.append("line").attr("class", "truth_line"); 
+
+  var bearing_line_lengh  = 0.3;
+
+  function do_display(data) {
+      var dx     = data[0];
+      var dy     = data[1];
+      var dtheta = data[2];
+      var drx    = data[3];
+      var dry    = data[4];
+      var dorientation = data[5];
+
+      bearing_line
+        .attr("x1", x(dx))
+        .attr("y1", y(dy))
+        .attr("x2", x(dx + bearing_line_lengh * Math.cos(dtheta)))
+        .attr("y2", y(dy + bearing_line_lengh * Math.sin(dtheta)));
+
+      s_ellipse
+        .attr("transform", "rotate(" + (dorientation) +", " + (x(dx))+","+y(dy)+")")
+        .attr("cx", x(dx))
+        .attr("cy", y(dy))
+        .attr("rx", radius(Math.sqrt(drx)))
+        .attr("ry", radius(Math.sqrt(dry)));
+
+  }
+
+  d3.json("ekf3d_z_only.json", function (error, all_data) {
+    var i = 0;
+    (function display() {
+      var data = all_data[i];  
+      do_display(data);
+      i = i+1; 
+      if(i !== all_data.length) {
+        setTimeout(display,100); 
+      }
+    })(); 
+  });
+
+</script>

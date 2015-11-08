@@ -38,6 +38,9 @@ module type U_sig = sig
       command. This noise will be added to the state 
       covariance matrix durng the kalman filter 
       predict step.   
+
+      Matrix should be square and of same dimension as 
+      the state covariance matrix.
    *) 
 
 end
@@ -78,7 +81,7 @@ module Make (X:X_sig)
       matrix [s] 
    *)
   
-  val correct : X.x -> Matrix_util.mat -> Z.z -> (X.x * Matrix_util.mat)
+  val correct : ?debug:unit -> X.x -> Matrix_util.mat -> Z.z -> (X.x * Matrix_util.mat)
   (** [correct x s z] applies the measurement correction using measurement [z]
       to state [x] with covariance [s].
    *)

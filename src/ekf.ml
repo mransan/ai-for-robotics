@@ -45,14 +45,19 @@ module Make (X:X_sig)
     let s' = gm *~ s *~ (Matrix_util.transpose gm) +~ r in 
     (x', s')  
 
-  let correct x s z = 
+  let correct ?debug x s z = 
     let open Matrix_util.Ops in 
-    let zm  = Z.mat_of_z z in       (* measure *) 
+    let zm  = Z.mat_of_z z in         (* measure *) 
+    Util.if_some debug (fun () -> Matrix_util.print "z:" zm);
     let zpm = Z.mat_of_z (Z.h z x) in (* from belief *)
+    Util.if_some debug (fun () -> Matrix_util.print "z^:" zpm);
     let hm  = Z.jacobian z x in 
+    Util.if_some debug (fun () -> Matrix_util.print "H:" hm);
     let si  = hm *~ s *~ (Matrix_util.transpose hm) +~  (Z.q z x) in
     Lacaml_D.getri si; 
+    Util.if_some debug (fun () -> Matrix_util.print "Si-1:" si);
     let ki  = s *~ (Matrix_util.transpose hm) *~ si in 
+    Util.if_some debug (fun () -> Matrix_util.print "Ki:" ki);
     let x   = (X.mat_of_x x) +~ ki *~ (zm -~ zpm) in
     let s   = (Matrix_util.identity (Matrix_util.square_dim s) -~ ki *~ hm) *~ s in 
     (X.x_of_mat x, s)  

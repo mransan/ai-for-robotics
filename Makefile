@@ -23,6 +23,7 @@ native:
 			$(OCB) src/tests/eigen_values_test.native
 			$(OCB) src/apps/pf2d.native
 			$(OCB) src/apps/ekf1d.native
+			$(OCB) src/apps/ekf3d.native
 			$(OCB) src/apps/velocity_model_ekf.native
 			$(OCB) src/apps/velocity_model_ekf2.native
 

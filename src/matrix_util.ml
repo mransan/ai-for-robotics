@@ -30,7 +30,9 @@ let transpose x =
   Mat.transpose x 
 
 let eigen_decomposition ?n m = 
-  let m' = cpy m in 
+  let m' = match n with 
+    | Some n -> sub_matrix ~n ~m:n m 
+    | None   -> cpy m in 
   let e  = L.syev ?n ~vectors:true m' in 
   (e, m')
 
