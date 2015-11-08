@@ -24,5 +24,7 @@ native:
 			$(OCB) src/apps/pf2d.native
 			$(OCB) src/apps/ekf1d.native
 			$(OCB) src/apps/ekf3d.native
+it:
+	$(OCB) src/apps/ekf1d.native
 
 .PHONY: 	all clean byte native 

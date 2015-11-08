@@ -2,28 +2,55 @@
 <meta charset="utf-8"> 
 <style>
 
-.sigma { 
-  fill: steelblue;
-  stroke:blue; 
-  stroke-width:1;
-}
+  .sigma { 
+    fill: steelblue;
+    stroke:blue; 
+    stroke-width:1;
+  }
 
-.truth_line {
-  stroke:red; 
-  stroke-width:1;
-}
+  .truth_line {
+    stroke:green; 
+    stroke-width:1;
+  }
 
-.axis text {
-  font: 10px sans-serif;
-}
+  .axis text {
+    font: 10px sans-serif;
+  }
 
-.axis path, .axis line {
-  fill: none;
-  stroke: #000; 
-  shape-rendering: crispEdges;
-}
+  .axis path, .axis line {
+    fill: none;
+    stroke: #000; 
+    shape-rendering: crispEdges;
+  }
 
 </style> 
+<table cellpadding="10">
+  <tr>
+    <td colspan="2">
+      <h3>Extended Kalman Filter for a 1D Robot (x axis only)
+      </h3>
+    </td>
+  </tr>
+  <tr style="margin-bottom:10px" >
+    <td align="left" valign="center" >
+      Select the simulation: 
+    </td>
+    <td align="right" valign="center">
+      <select class="data_selection">
+        <option value="ekf1d_motion_only.json">Motion Only (No Measurement)</option>
+        <option value="ekf1d_measurement_high_noise.json">With Measurement (High noise)</option>
+        <option value="ekf1d_measurement_medium_noise.json">With Measurement (Medium noise)</option>
+        <option value="ekf1d_measurement_low_noise.json">With Measurement (Low noise)</option>
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <svg class="chart">
+      </svg> 
+    </td>
+  </tr>
+</table>
 
 <svg class="chart">
 </svg> 
@@ -39,56 +66,68 @@
   var height = 500; 
   svg.attr("width", width).attr("height", height);
 
-  var min_y = -0.1; 
-  var max_y = 2; 
+  var min_y = -0.16; 
+  var max_y = 2.1; 
 
-  var x = d3.scale.linear().range([0, width ]).domain([-10, 110]);
+  var x = d3.scale.linear().range([0, width ]).domain([-1, 11.2]);
   var y = d3.scale.linear().range([height, 0]).domain([min_y, max_y]);
 
   var y_axis = d3.svg.axis().scale(y).orient("left");
   svg.append("g")
-      .attr("class", "y axis")
-      .attr("transform", "translate(" + x(0) + ", 0)")
-      .call(y_axis);
+  .attr("class", "y axis")
+  .attr("transform", "translate(" + x(0) + ", 0)")
+  .call(y_axis);
 
   var x_axis   = d3.svg.axis().scale(x).orient("bottom"); 
   svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0, " + y(0) + ")")
-    .call(x_axis);
+  .attr("class", "x axis")
+  .attr("transform", "translate(0, " + y(0) + ")")
+  .call(x_axis);
 
   var sigma      = svg.append("path").attr("class", "sigma");
   var sigma_line = d3.svg.line()
-      .x(function(d) { return x(d[0]); })
-      .y(function(d) { return y(d[1]); });
+  .x(function(d) { return x(d[0]); })
+  .y(function(d) { return y(d[1]); });
   var truth_line = svg.append("line").attr("class", "truth_line"); 
 
   function do_display(data) {
-      var xtruth    = data[0];
-      var xestimate = data[1];
-      var line_data = data[2];
+    var xtruth    = data[0];
+    var xestimate = data[1];
+    var line_data = data[2];
 
-      truth_line
-        .attr("x1", x(xtruth))
-        .attr("y1", y(min_y))
-        .attr("x2", x(xtruth))
-        .attr("y2", y(max_y));
+    truth_line
+    .attr("x1", x(xtruth))
+    .attr("y1", y(min_y))
+    .attr("x2", x(xtruth))
+    .attr("y2", y(max_y));
 
-     sigma
-        .datum(line_data)
-        .attr("d", sigma_line);
+    sigma
+    .datum(line_data)
+    .attr("d", sigma_line);
   }
-
-  d3.json("ekf1d.json", function (error, all_data) {
-    var i = 0;
-    (function display() {
-      var data = all_data[i];  
-      do_display(data);
-      i = i+1; 
-      if(i !== all_data.length) {
-        setTimeout(display,200); 
-      }
-    })(); 
+  var menu      = d3.select(".data_selection");
+  var counter   = 0;
+  menu.on("change", function() {
+      counter = counter + 1; 
+      load_data_and_display(); 
   });
+
+  function load_data_and_display() {
+    var file_name = menu.property("value");
+    var local_counter = counter;
+    d3.json(file_name, function (error, all_data) {
+      var i = 0;
+      (function display() {
+        var data = all_data[i];  
+        do_display(data);
+        i = i+1; 
+        if(i !== all_data.length && local_counter === counter) {
+          setTimeout(display,100); 
+        }
+      })(); 
+    });
+  }
+  load_data_and_display();
+
 
 </script>

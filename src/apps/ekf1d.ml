@@ -57,31 +57,48 @@ module E = Ekf.Make(X)(U)(Z)
 let () = 
   Random.self_init ();
 
+  let total_time = 10. in 
+  let steps      = 100. in 
+
   let x = 0. in 
   let s = Mat.of_array [| [| 0.1 |] |] in
-  let u_gaussian = Gaussian1D.create ~mean:0. ~variance:0.2 in 
-  let dt = 1. in 
-  let u = (1., dt, (Gaussian1D.variance u_gaussian)) in 
-  let landmark = 5. in 
-  let z_noise = Gaussian1D.create ~mean:0. ~variance:0.2 in 
+
+  let dt = total_time /. steps in 
+
+  let u_belief = (1.0, dt, 0.2) in 
+  let u_actual = (0.9, dt, 0.0) in 
+
+  let landmark = 11. in 
+  let z_noise  = 0.05 in  
+  let measurement_every = 4 in 
   
   (* Create a scenario 
 
      This step creates a scenario which is sequence 
      of motion and measurements. 
      
-     Both motion and measurements are done with noise to simulate
-     a realistic scenario.
+     
+     The scenario motion [u_actual] is different 
+     from the [u_belief] by a constant; hence illustrating a 
+     constant malfunction of the motor.
+
+     For this scenario each measurement is perfect. However the 
+     model for measurement does include noise (ie the [Ekf.correct]
+     steps does assume each measurement has a certain noise).
    *)
  
   let events, x = Util.fold_n (fun (events, x) -> 
     let events = (`Motion, x)::events in 
-    let x      = U.g x u in 
-    let x      = x +. (Gaussian1D.random u_gaussian) in  
-    if Random.int 5 = 0 
+    let x      = U.g x u_actual in 
+    if Random.int measurement_every = 0 
     then 
        let m = landmark -. x in 
-       let m = m +. Gaussian1D.random z_noise in 
+       (* Sometime we might want to add some random noise 
+          to each measurement. In this case we would add the 
+          following step:
+         
+          [let m = m +. Gaussian1D.random z_noise in]
+        *)
        ((`Measurement m, x)::events, x)
     else 
        (events, x)
@@ -92,11 +109,11 @@ let () =
     match e with 
     | `Motion -> 
         let log  = (x, xtruth, float_of_mat s ) :: log in 
-        let x, s = E.predict x s u  in 
+        let x, s = E.predict x s u_belief  in 
         (x, s, log)
     | `Measurement m -> 
         let log  = (x, xtruth, float_of_mat s) :: log in 
-        let x, s = E.correct x s (landmark, m, Gaussian1D.variance z_noise) in 
+        let x, s = E.correct x s (landmark, m, z_noise) in 
         (x, s, log) 
   ) (0., s, []) (List.rev events) in 
 
