@@ -187,7 +187,7 @@ let () =
   let w  = Angle.pi /. (2. *. total_time)  in 
   let v  = Velocity2D.create ~v:1.  ~w () in 
   let dt = total_time /. steps  in 
-  let v_noise = Velocity2D.create_noise 0.1 0.1 0.01 0.01 in 
+  let v_noise = Velocity2D.create_noise 0.9 0.9 0.09 0.09 in 
   let s = Mat.of_array [|
     [|0.1 ; 0.  ; 0. |];
     [|0.0 ; 0.1 ; 0. |];
@@ -249,7 +249,7 @@ let () =
     let v  = 1. in 
     let w  = Angle.pi /. (2. *. total_time) in 
     let v  = Velocity2D.create ~v ~w () in 
-    let v_noise = Velocity2D.create_noise 0.1 0.1 0.01 0.01 in 
+    let v_noise = Velocity2D.create_noise 1.5 1.5 0.15 0.15 in 
     (v, dt, v_noise) 
   in  
   
@@ -268,7 +268,7 @@ let () =
     Pos2D.create ~x:10. ~y:10. ~theta:0.; 
     Pos2D.create ~x:0.  ~y:10. ~theta:0.; 
   ] in
-  let measurement_noise = 0.01 in
+  let measurement_noise = 0.1 in
 
   (* First pass simulation using the u_actual and no noise 
      to collect all measurements. 

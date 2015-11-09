@@ -7,6 +7,9 @@
 OCB_FLAGS = -use-ocamlfind -pkg lacaml -pkg yojson -tag bin_annot -I src
 OCB = 		ocamlbuild $(OCB_FLAGS)
 
+it:
+	$(OCB) src/apps/ekf3d.native
+
 all: 		native
 
 clean:
@@ -24,7 +27,5 @@ native:
 			$(OCB) src/apps/pf2d.native
 			$(OCB) src/apps/ekf1d.native
 			$(OCB) src/apps/ekf3d.native
-it:
-	$(OCB) src/apps/ekf1d.native
 
 .PHONY: 	all clean byte native 

@@ -63,13 +63,13 @@ function PF2D (config) {
     var y_axis = d3.svg.axis().scale(y).orient("left");
     d3_svg.append("g")
       .attr("class", "y axis")
-      .attr("transform", "translate(" + 30 + ", 0)")
+      .attr("transform", svg_translate(30, 0))
       .call(y_axis);
     
     var x_axis   = d3.svg.axis().scale(x).orient("bottom"); 
     d3_svg.append("g")
       .attr("class", "x axis")
-      .attr("transform", "translate(0," + (height - 60) + ")")
+      .attr("transform", svg_translate(0, (height - 60)))
       .call(x_axis);
   };
   
