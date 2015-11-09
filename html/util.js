@@ -18,3 +18,11 @@ function min_max(d, accessor) {
 
   return [min_value  , max_value  ];
 }
+
+function svg_translate(x, y) {
+    return "translate(" + (+x) + ", " + (+y) + ")";
+}
+
+function svg_rotate(angle, x, y) {
+    return "rotate(" + (+angle) + ", " + (+x) + ", " + (+y) + ")";
+}

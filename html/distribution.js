@@ -29,11 +29,11 @@ function Distribution(config) {
 
   var x_axis_selection = d3_svg.append("g")
     .attr("class", "x axis")
-    .attr("transform", "translate(" + margin.left + "," + (height + margin.top ) + ")");
+    .attr("transform", svg_translate(margin.left, height + margin.top ))
   
   var y_axis_selection = d3_svg.append("g")
     .attr("class", "y axis")
-    .attr("transform", "translate(" + (margin.left -1) + ", " + margin.top + ")");
+    .attr("transform", svg_translate(margin.left - 1, margin.top))
 
   var text_selection = d3_svg.append("text")
       .attr("x", 40)
